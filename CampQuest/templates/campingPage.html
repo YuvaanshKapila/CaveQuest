@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Camping Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #d1fae5, #bfdbfe, #e9d5ff);
+      background-size: 400% 400%;
+      animation: gradientShift 12s ease infinite;
+    }
+    @keyframes gradientShift {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+    video {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex justify-center items-center font-sans">
+
+<div class="max-w-4xl w-full bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl p-8 space-y-6 transition-all duration-300">
+
+  <div class="flex justify-between items-center">
+    <h1 class="text-4xl font-extrabold text-green-800">🌲 Camping Assistant</h1>
+    <!-- Weather Widget -->
+    <div id="weather" class="text-right text-sm text-gray-700"></div>
+  </div>
+
+  <div class="space-y-4 h-80 overflow-y-auto border border-gray-300 rounded-xl p-4 bg-gray-50 shadow-inner">
+    {% for message in conversation_history %}
+      <div class="{{ 'text-blue-700' if message.startswith('AI') else 'text-gray-800' }} leading-relaxed">
+        <strong class="font-semibold">{{ message.split(":")[0] }}:</strong> {{ message.split(":")[1] }}
+      </div>
+    {% endfor %}
+  </div>
+
+  <form action="/campingPage" method="POST" class="flex gap-2">
+    <input 
+      type="text" 
+      name="user_input" 
+      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-400 transition-all" 
+      placeholder="Type your answer..." 
+      required
+    />
+    <button 
+      type="submit" 
+      class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold transition"
+    >
+      Send
+    </button>
+  </form>
+
+  {% if camping_type %}
+    <div class="mt-6 space-y-4">
+      <h2 class="text-2xl font-bold text-blue-800">🏕️ Recommended Camping Type: <span class="text-green-700">{{ camping_type }}</span></h2>
+      <p class="text-gray-700 text-lg">{{ reason }}</p>
+
+      <h3 class="text-xl font-semibold text-blue-800 mt-6">📍 Suggested Locations:</h3>
+      <ul class="list-disc pl-6 text-gray-700 space-y-2">
+        {% for location in locations %}
+          <li>
+            <strong>{{ location.name }}</strong><br>
+            Address: {{ location.address }}<br>
+            {% if location.place_id %}
+              <a 
+                class="text-green-600 underline hover:text-green-800" 
+                href="https://www.google.com/maps/place/?q=place_id:{{ location.place_id }}" 
+                target="_blank"
+              >
+                View on Google Maps
+              </a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+
+      <div id="map" class="rounded-xl mt-6 shadow-lg" style="height: 400px; width: 100%;"></div>
+    </div>
+  {% endif %}
+
+  <!-- Camera Detection Section -->
+  <div class="mt-6">
+    <h3 class="text-xl font-semibold text-blue-800">📷 Camera Feed</h3>
+    <video id="camera" autoplay></video>
+  </div>
+
+</div>
+
+{% if camping_type %}
+<script>
+  let campingLocations = JSON.parse('{{ locations | tojson | safe }}');
+</script>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_API_KEY }}&callback=initMap"></script>
+
+<script>
+  function initMap() {
+    const map = new google.maps.Map(document.getElementById("map"), {
+      zoom: 10,
+      center: { lat: 43.7315, lng: -79.7624 }
+    });
+
+    if (campingLocations && campingLocations.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
+
+      campingLocations.forEach(loc => {
+        if (loc.lat && loc.lng) {
+          const marker = new google.maps.Marker({
+            position: { lat: loc.lat, lng: loc.lng },
+            map: map,
+            title: loc.name
+          });
+          bounds.extend({ lat: loc.lat, lng: loc.lng });
+        }
+      });
+
+      map.fitBounds(bounds);
+    } else {
+      console.warn("No valid locations to show.");
+    }
+  }
+</script>
+{% endif %}
+
+<!-- Weather using Open-Meteo (can be replaced with real API call in backend) -->
+<script>
+  async function fetchWeather() {
+    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=43.4675&longitude=-79.6877&current_weather=true');
+    const data = await res.json();
+    const temp = data.current_weather.temperature;
+    const wind = data.current_weather.windspeed;
+    document.getElementById('weather').innerText = `🌤️ ${temp}°C | 💨 ${wind} km/h`;
+  }
+
+  fetchWeather();
+</script>
+
+<script>
+  // Camera Access
+  async function startCamera() {
+    const videoElement = document.getElementById('camera');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      videoElement.srcObject = stream;
+    } catch (err) {
+      console.error("Error accessing the camera:", err);
+    }
+  }
+
+  startCamera();
+</script>
+
+</body>
+</html>

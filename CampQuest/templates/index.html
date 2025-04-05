@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome to CampQuest</title>
+  <script>
+    // Redirect to campingPage after 5 seconds
+    setTimeout(() => {
+      window.location.href = "/campingPage";
+    }, 5000);
+  </script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-green-100 via-blue-100 to-purple-200 flex items-center justify-center h-screen">
+  <div class="text-center p-10 bg-white rounded-2xl shadow-xl max-w-xl">
+    <h1 class="text-4xl font-bold text-green-700 mb-4">Welcome to CampQuest 🌲</h1>
+    <p class="text-lg text-gray-700 mb-6">
+      Your all-in-one smart camping assistant. From finding the perfect campsite to identifying birds, plants, and packing the right gear—CampQuest has you covered.
+    </p>
+    <p class="text-sm text-gray-500">Loading your adventure...</p>
+    <div class="mt-6 flex justify-center">
+      <div class="animate-spin rounded-full h-8 w-8 border-t-4 border-green-500"></div>
+    </div>
+  </div>
+</body>
+</html>
